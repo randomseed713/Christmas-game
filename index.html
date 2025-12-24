@@ -51,17 +51,17 @@
       pointer-events:none;
     }
     .pad{
-      display:grid; grid-template-columns:50px 50px 50px; grid-template-rows:50px 50px 50px; gap:8px;
+      display:grid; grid-template-columns:60px 60px 60px; grid-template-rows:60px 60px 60px; gap:4px;
       pointer-events:auto;
     }
     .pad button{
-      width:50px; height:50px; border-radius:14px;
+      width:60px; height:60px; border-radius:16px;
       border:1px solid rgba(255,255,255,.18);
-      background: rgba(0,0,0,.28); color:#fff; font-size:16px;
+      background: rgba(0,0,0,.35); color:#fff; font-size:18px; font-weight:600;
     }
     .pad button:active{transform: translateY(1px); background: rgba(255,255,255,.10);}
     .rightPad{display:flex; flex-direction:column; gap:8px; pointer-events:auto;}
-    .rightPad button{height:50px; min-width:120px; border-radius:14px; border:1px solid rgba(255,255,255,.18); background: rgba(0,0,0,.28); color:#fff;}
+    .rightPad button{height:60px; min-width:100px; border-radius:16px; border:1px solid rgba(255,255,255,.18); background: rgba(0,0,0,.35); color:#fff; font-size:14px; font-weight:600;}
     .modal{
       position:absolute; inset:0; display:none; align-items:center; justify-content:center;
       background: rgba(0,0,0,.55); backdrop-filter: blur(6px);
@@ -115,9 +115,9 @@
 
     <div class="mobileControls" aria-hidden="true">
       <div class="pad">
-        <span></span><button data-dir="up">▲</button><span></span>
-        <button data-dir="left">◀</button><button data-dir="down">▼</button><button data-dir="right">▶</button>
-        <span></span><span></span><span></span>
+        <span></span><button data-dir="up">↑</button><span></span>
+        <button data-dir="left">←</button><span></span><button data-dir="right">→</button>
+        <span></span><button data-dir="down">↓</button><span></span>
       </div>
       <div class="rightPad">
         <button id="dashBtn">冲刺</button>
