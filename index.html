@@ -148,8 +148,8 @@
 <script>
 (() => {
   // ====== 你只需改这里两处 ======
-  const GIRL_NAME = "宝贝"; // ← 改成她的名字/昵称
-  const BIRTHDAY_TEXT = "愿你在新的一岁，天天开心、事事顺心，想要的都能实现。";
+  const GIRL_NAME = "婧婧"; // ← 改成她的名字/昵称
+  const BIRTHDAY_TEXT = "婧婧，遇见你以后，我的冬天都有了光。愿你被温柔以待，所有心愿都如约而至。爱你，不止这一天。";
   // ===========================
 
   const canvas = document.getElementById("game");
@@ -681,7 +681,7 @@
         `Merry Christmas！<br><br>` +
         `你把礼物都收齐啦：<b style="color:var(--gold)">这份小小的圣诞惊喜</b>送给你。<br>` +
         `${BIRTHDAY_TEXT}<br><br>` +
-        `我会一直陪你长大。`;
+        `更想说的是：婧婧，我爱你。往后的每一个冬天，都想和你一起过。`;
       makeFireworks();
       beep(1040, 0.06, "triangle", 0.04);
       setTimeout(()=>beep(1320, 0.07, "triangle", 0.03), 120);
@@ -690,9 +690,9 @@
       titleText.textContent = `差一点点，${GIRL_NAME}`;
       msgText.innerHTML =
         `礼物还没收齐，不过没关系。<br><br>` +
-        `真正的礼物是：<b style="color:var(--mint)">你今天过圣诞</b>。<br>` +
+        `真正的礼物是：<b style="color:var(--mint)">你</b>。<br>` +
         `${BIRTHDAY_TEXT}<br><br>` +
-        `点“再玩一次”，我陪你把礼物收回来。`;
+        `点“再玩一次”，我陪你把礼物收回来；不管输赢，我都在你身边。`;
       makeFireworks(true);
       beep(220, 0.08, "sine", 0.04);
     }
