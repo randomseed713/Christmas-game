@@ -1,0 +1,839 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>圣诞小礼物</title>
+  <style>
+    :root{
+      --bg1:#061a2b; --bg2:#0b2b3f;
+      --accent:#ff3b6b; --gold:#ffd36b; --mint:#7fffd4;
+      --panel: rgba(0,0,0,.55);
+    }
+    html,body{height:100%; margin:0; font-family: -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",Arial,sans-serif; background: radial-gradient(1200px 600px at 50% 30%, #123a54 0%, var(--bg1) 50%, #03101b 100%); color:#fff;}
+    .wrap{height:100%; display:flex; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;}
+    .card{
+      width:min(980px, 100%); border-radius:18px; background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      box-shadow: 0 18px 60px rgba(0,0,0,.45); overflow:hidden; border:1px solid rgba(255,255,255,.10);
+      position:relative;
+    }
+    header{
+      display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+      padding:14px 16px; background: rgba(0,0,0,.22); border-bottom: 1px solid rgba(255,255,255,.10);
+    }
+    h1{margin:0; font-size:16px; font-weight:700; letter-spacing:.2px;}
+    .sub{opacity:.85; font-size:12px; margin-top:4px; line-height:1.35;}
+    .hud{display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end;}
+    .pill{
+      padding:6px 10px; border-radius:999px; background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12); font-size:12px; white-space:nowrap;
+    }
+    .pill b{color:var(--gold); font-weight:800;}
+    .btn{
+      cursor:pointer; user-select:none;
+      padding:7px 10px; border-radius:10px; font-size:12px;
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.06);
+    }
+    .btn:hover{background: rgba(255,255,255,.10);}
+    canvas{display:block; width:100%; height:auto; background: transparent;}
+    .footer{
+      display:flex; gap:10px; justify-content:space-between; align-items:center;
+      padding:10px 14px; border-top:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      font-size:12px; opacity:.9;
+    }
+    .kbd{padding:2px 6px; border-radius:6px; border:1px solid rgba(255,255,255,.22); background: rgba(0,0,0,.25); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;}
+    .mobileControls{
+      display:none;
+      position:absolute; left:12px; right:12px; bottom:56px;
+      justify-content:space-between; gap:12px;
+      pointer-events:none;
+    }
+    .pad{
+      display:grid; grid-template-columns:50px 50px 50px; grid-template-rows:50px 50px 50px; gap:8px;
+      pointer-events:auto;
+    }
+    .pad button{
+      width:50px; height:50px; border-radius:14px;
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(0,0,0,.28); color:#fff; font-size:16px;
+    }
+    .pad button:active{transform: translateY(1px); background: rgba(255,255,255,.10);}
+    .rightPad{display:flex; flex-direction:column; gap:8px; pointer-events:auto;}
+    .rightPad button{height:50px; min-width:120px; border-radius:14px; border:1px solid rgba(255,255,255,.18); background: rgba(0,0,0,.28); color:#fff;}
+    .modal{
+      position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+      background: rgba(0,0,0,.55); backdrop-filter: blur(6px);
+      padding:16px;
+    }
+    .modal.show{display:flex;}
+    .dialog{
+      width:min(680px, 100%); border-radius:18px; background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.05));
+      border:1px solid rgba(255,255,255,.18);
+      box-shadow: 0 18px 70px rgba(0,0,0,.55);
+      overflow:hidden;
+    }
+    .dialogHead{padding:16px 16px 0 16px;}
+    .big{
+      font-size:28px; font-weight:900; margin:0;
+      letter-spacing:.5px;
+      background: linear-gradient(90deg, #fff, var(--mint), #fff);
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+    }
+    .msg{padding:10px 16px 14px 16px; opacity:.95; line-height:1.7;}
+    .dialogFoot{
+      display:flex; justify-content:flex-end; gap:10px;
+      padding:12px 16px 16px 16px;
+    }
+    .primary{background: rgba(255,59,107,.20); border-color: rgba(255,59,107,.55);}
+    .primary:hover{background: rgba(255,59,107,.28);}
+    .hint{opacity:.75; font-size:12px; margin-top:6px;}
+    @media (max-width: 720px){
+      .mobileControls{display:flex;}
+      .sub{display:none;}
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <header>
+      <div>
+        <h1>收集礼物、躲开雪球。</h1>
+      </div>
+      <div class="hud">
+        <div class="pill">礼物：<b id="score">0</b> / <span id="goal">12</span></div>
+        <div class="pill">时间：<b id="time">60</b>s</div>
+        <div class="pill">生命：<b id="hp">3</b></div>
+        <button class="btn" id="restartBtn">重开</button>
+        <button class="btn" id="soundBtn">音效：开</button>
+      </div>
+    </header>
+
+    <canvas id="game" width="960" height="540"></canvas>
+
+    <div class="mobileControls" aria-hidden="true">
+      <div class="pad">
+        <span></span><button data-dir="up">▲</button><span></span>
+        <button data-dir="left">◀</button><button data-dir="down">▼</button><button data-dir="right">▶</button>
+        <span></span><span></span><span></span>
+      </div>
+      <div class="rightPad">
+        <button id="dashBtn">冲刺</button>
+        <button id="pauseBtn">暂停</button>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>操作：<span class="kbd">WASD</span>/<span class="kbd">方向键</span>移动，<span class="kbd">空格</span>冲刺（短暂加速）</div>
+    </div>
+
+    <div class="modal" id="modal">
+      <div class="dialog">
+        <div class="dialogHead">
+          <p class="big" id="titleText">圣诞快乐</p>
+        </div>
+        <div class="msg" id="msgText"></div>
+        <canvas id="fireworks" width="960" height="360" style="width:100%; height:auto; display:block;"></canvas>
+        <div class="dialogFoot">
+          <button class="btn" id="copyBtn">复制祝福</button>
+          <button class="btn primary" id="playAgainBtn">再玩一次</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // ====== 你只需改这里两处 ======
+  const GIRL_NAME = "宝贝"; // ← 改成她的名字/昵称
+  const BIRTHDAY_TEXT = "愿你在新的一岁，天天开心、事事顺心，想要的都能实现。";
+  // ===========================
+
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+
+  const scoreEl = document.getElementById("score");
+  const goalEl = document.getElementById("goal");
+  const timeEl = document.getElementById("time");
+  const hpEl = document.getElementById("hp");
+
+  const restartBtn = document.getElementById("restartBtn");
+  const soundBtn = document.getElementById("soundBtn");
+
+  const modal = document.getElementById("modal");
+  const titleText = document.getElementById("titleText");
+  const msgText = document.getElementById("msgText");
+  const playAgainBtn = document.getElementById("playAgainBtn");
+  const copyBtn = document.getElementById("copyBtn");
+
+  const fwCanvas = document.getElementById("fireworks");
+  const fw = fwCanvas.getContext("2d");
+
+  const pauseBtn = document.getElementById("pauseBtn");
+  const dashBtn = document.getElementById("dashBtn");
+
+  const W = canvas.width, H = canvas.height;
+
+  const rng = (min, max) => Math.random() * (max - min) + min;
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  // ---- 音效（无外部资源，避免版权问题）----
+  let audioOn = true;
+  let audioCtx = null;
+  function beep(freq=440, dur=0.06, type="sine", gain=0.03){
+    if(!audioOn) return;
+    try{
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = type;
+      o.frequency.value = freq;
+      g.gain.value = gain;
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start();
+      o.stop(audioCtx.currentTime + dur);
+    } catch {}
+  }
+
+  const keys = new Set();
+  let paused = false;
+
+  window.addEventListener("keydown", (e) => {
+    if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," ","w","a","s","d","W","A","S","D","Escape"].includes(e.key)) e.preventDefault();
+    if(e.key === "Escape") togglePause();
+    keys.add(e.key);
+    if(e.key === " ") dash();
+  }, {passive:false});
+  window.addEventListener("keyup", (e)=> keys.delete(e.key));
+
+  function bindMobile(){
+    const padButtons = document.querySelectorAll("[data-dir]");
+    const down = (dir)=> {
+      if(dir==="up") keys.add("ArrowUp");
+      if(dir==="down") keys.add("ArrowDown");
+      if(dir==="left") keys.add("ArrowLeft");
+      if(dir==="right") keys.add("ArrowRight");
+    };
+    const up = (dir)=> {
+      if(dir==="up") keys.delete("ArrowUp");
+      if(dir==="down") keys.delete("ArrowDown");
+      if(dir==="left") keys.delete("ArrowLeft");
+      if(dir==="right") keys.delete("ArrowRight");
+    };
+    padButtons.forEach(btn=>{
+      const dir = btn.getAttribute("data-dir");
+      btn.addEventListener("touchstart", (e)=>{e.preventDefault(); down(dir);}, {passive:false});
+      btn.addEventListener("touchend", (e)=>{e.preventDefault(); up(dir);}, {passive:false});
+      btn.addEventListener("mousedown", ()=> down(dir));
+      btn.addEventListener("mouseup", ()=> up(dir));
+      btn.addEventListener("mouseleave", ()=> up(dir));
+    });
+
+    dashBtn.addEventListener("click", dash);
+    pauseBtn.addEventListener("click", togglePause);
+  }
+  bindMobile();
+
+  // ---- 游戏参数 ----
+  const state = {
+    goal: 12,
+    score: 0,
+    hp: 3,
+    time: 60,
+    startedAt: 0,
+    lastTickAt: 0,
+    gameOver: false,
+    win: false,
+    idleMs: 0,
+  };
+
+  const player = {
+    x: W*0.5, y: H*0.70,
+    r: 18,
+    vx: 0, vy: 0,
+    baseSpeed: 220,
+    dashSpeed: 520,
+    dashLeft: 0,
+    dashCooldown: 0,
+    invuln: 0,
+  };
+
+  const gifts = [];
+  const snowballs = [];
+  const sparkles = [];
+
+  function reset(){
+    state.goal = 12;
+    state.score = 0;
+    state.hp = 3;
+    state.time = 60;
+    state.gameOver = false;
+    state.win = false;
+    state.startedAt = performance.now();
+    state.lastTickAt = state.startedAt;
+    state.idleMs = 0;
+
+    player.x = W*0.5; player.y = H*0.70;
+    player.vx = 0; player.vy = 0;
+    player.dashLeft = 0;
+    player.dashCooldown = 0;
+    player.invuln = 0;
+
+    gifts.length = 0;
+    snowballs.length = 0;
+    sparkles.length = 0;
+
+    for(let i=0;i<5;i++) spawnGift();
+    for(let i=0;i<4;i++) spawnSnowball();
+
+    updateHUD();
+    hideModal();
+  }
+
+  function updateHUD(){
+    scoreEl.textContent = state.score;
+    goalEl.textContent = state.goal;
+    timeEl.textContent = Math.max(0, Math.ceil(state.time));
+    hpEl.textContent = state.hp;
+  }
+
+  function spawnGift(){
+    gifts.push({
+      x: rng(50, W-50),
+      y: rng(80, H-80),
+      r: 14,
+      bob: rng(0, Math.PI*2),
+      kind: Math.random() < 0.2 ? "gold" : "red"
+    });
+  }
+
+  function spawnSnowball(){
+    const side = Math.random() < 0.5 ? "left" : "right";
+    const y = rng(90, H-90);
+    const x = side==="left" ? -20 : W+20;
+    const speed = rng(120, 220) * (side==="left" ? 1 : -1);
+    snowballs.push({
+      x, y,
+      r: rng(12, 20),
+      vx: speed,
+      vy: rng(-40, 40),
+      spin: rng(-2, 2),
+    });
+  }
+
+  function dash(){
+    if(state.gameOver || state.win) return;
+    if(player.dashCooldown > 0) return;
+    player.dashLeft = 0.22;
+    player.dashCooldown = 0.9;
+    beep(880, 0.05, "triangle", 0.03);
+  }
+
+  function togglePause(){
+    if(state.gameOver || state.win) return;
+    paused = !paused;
+    beep(paused ? 220 : 440, 0.06, "sine", 0.025);
+  }
+
+  function circleHit(a, b){
+    const dx = a.x - b.x, dy = a.y - b.y;
+    const rr = a.r + b.r;
+    return dx*dx + dy*dy <= rr*rr;
+  }
+
+  function step(dt){
+    if(paused) return;
+
+    // 时间
+    state.time -= dt;
+    if(state.time <= 0 && !state.win){
+      state.gameOver = true;
+      openModal(false);
+      return;
+    }
+
+    // 冲刺/无敌冷却
+    player.dashCooldown = Math.max(0, player.dashCooldown - dt);
+    player.dashLeft = Math.max(0, player.dashLeft - dt);
+    player.invuln = Math.max(0, player.invuln - dt);
+
+    // 输入
+    let ix = 0, iy = 0;
+    const up = keys.has("ArrowUp") || keys.has("w") || keys.has("W");
+    const down = keys.has("ArrowDown") || keys.has("s") || keys.has("S");
+    const left = keys.has("ArrowLeft") || keys.has("a") || keys.has("A");
+    const right = keys.has("ArrowRight") || keys.has("d") || keys.has("D");
+    if(up) iy -= 1;
+    if(down) iy += 1;
+    if(left) ix -= 1;
+    if(right) ix += 1;
+
+    const moving = (ix !== 0 || iy !== 0);
+    if(!moving) state.idleMs += dt*1000; else state.idleMs = 0;
+
+    const len = Math.hypot(ix, iy) || 1;
+    ix /= len; iy /= len;
+
+    const speed = (player.dashLeft > 0) ? player.dashSpeed : player.baseSpeed;
+    player.vx = ix * speed;
+    player.vy = iy * speed;
+
+    player.x = clamp(player.x + player.vx*dt, 24, W-24);
+    player.y = clamp(player.y + player.vy*dt, 74, H-24);
+
+    // 星光彩蛋（站立 3 秒）
+    if(state.idleMs > 3000 && sparkles.length < 18){
+      sparkles.push({
+        x: player.x + rng(-22, 22),
+        y: player.y - rng(8, 30),
+        r: rng(1.5, 3.5),
+        a: 1,
+        vx: rng(-25, 25),
+        vy: rng(-65, -25),
+      });
+      if(sparkles.length === 1) beep(660, 0.05, "sine", 0.02);
+    }
+
+    // 更新礼物（浮动）
+    gifts.forEach(g => g.bob += dt*2.2);
+
+    // 更新雪球
+    for(const s of snowballs){
+      s.x += s.vx * dt;
+      s.y += s.vy * dt;
+      s.vy += Math.sin((s.x+ s.y)*0.01) * 2;
+      if(s.x < -60 || s.x > W+60){
+        // 重生
+        s.x = (s.vx > 0) ? -40 : W+40;
+        s.y = rng(90, H-90);
+        s.r = rng(12, 20);
+      }
+      s.y = clamp(s.y, 90, H-40);
+    }
+
+    // 更新星光
+    for(const sp of sparkles){
+      sp.x += sp.vx * dt;
+      sp.y += sp.vy * dt;
+      sp.a -= dt * 1.4;
+    }
+    for(let i=sparkles.length-1;i>=0;i--){
+      if(sparkles[i].a <= 0) sparkles.splice(i,1);
+    }
+
+    // 碰撞：礼物
+    for(let i=gifts.length-1;i>=0;i--){
+      const g = gifts[i];
+      if(circleHit(player, g)){
+        gifts.splice(i,1);
+        state.score += (g.kind === "gold") ? 2 : 1;
+        beep(g.kind==="gold" ? 1040 : 780, 0.05, "triangle", 0.03);
+        spawnGift();
+        if(Math.random() < 0.25) spawnSnowball();
+        if(state.score >= state.goal){
+          state.win = true;
+          openModal(true);
+          return;
+        }
+      }
+    }
+
+    // 碰撞：雪球
+    if(player.invuln <= 0){
+      for(const s of snowballs){
+        if(circleHit(player, s)){
+          state.hp -= 1;
+          player.invuln = 1.1;
+          beep(160, 0.08, "sawtooth", 0.04);
+          if(state.hp <= 0){
+            state.gameOver = true;
+            openModal(false);
+          }
+          break;
+        }
+      }
+    }
+
+    updateHUD();
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+
+    // 背景雪花
+    drawSnowBackdrop();
+
+    // 地面与装饰
+    drawGround();
+
+    // 礼物
+    for(const g of gifts) drawGift(g);
+
+    // 雪球
+    for(const s of snowballs) drawSnowball(s);
+
+    // 星光
+    for(const sp of sparkles) drawSparkle(sp);
+
+    // 玩家
+    drawPlayer();
+
+    // 暂停遮罩
+    if(paused){
+      ctx.fillStyle = "rgba(0,0,0,.35)";
+      ctx.fillRect(0,0,W,H);
+      ctx.fillStyle = "rgba(255,255,255,.92)";
+      ctx.font = "800 32px system-ui, -apple-system, PingFang SC, Microsoft YaHei";
+      ctx.textAlign = "center";
+      ctx.fillText("已暂停", W/2, H/2 - 10);
+      ctx.font = "14px system-ui, -apple-system, PingFang SC, Microsoft YaHei";
+      ctx.fillText("按 Esc 或点击“暂停”继续", W/2, H/2 + 18);
+    }
+  }
+
+  let snowSeed = [];
+  function drawSnowBackdrop(){
+    if(snowSeed.length === 0){
+      for(let i=0;i<120;i++){
+        snowSeed.push({x:rng(0,W), y:rng(0,H), r:rng(0.8,2.4), s:rng(10,40), a:rng(0.25,0.9)});
+      }
+    }
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    for(const p of snowSeed){
+      p.y += p.s * (1/60);
+      p.x += Math.sin(p.y*0.01) * 0.3;
+      if(p.y > H+5){ p.y = -5; p.x = rng(0,W); }
+      ctx.fillStyle = `rgba(255,255,255,${p.a})`;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawGround(){
+    // 雪地
+    const grd = ctx.createLinearGradient(0, H-140, 0, H);
+    grd.addColorStop(0, "rgba(255,255,255,.10)");
+    grd.addColorStop(1, "rgba(255,255,255,.04)");
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, H-140, W, 140);
+
+    // 彩灯串
+    ctx.strokeStyle = "rgba(255,255,255,.20)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, 70);
+    for(let x=0;x<=W;x+=40){
+      ctx.quadraticCurveTo(x+20, 52 + Math.sin(x*0.02)*6, x+40, 70);
+    }
+    ctx.stroke();
+
+    for(let x=20; x<W; x+=40){
+      const y = 70 + Math.sin(x*0.02)*6;
+      const c = ["#ff3b6b","#ffd36b","#7fffd4","#6ea8ff"][Math.floor((x/40)%4)];
+      ctx.fillStyle = c;
+      ctx.beginPath();
+      ctx.arc(x, y+10, 5, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,.35)";
+      ctx.beginPath();
+      ctx.arc(x-2, y+8, 1.8, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
+
+  function drawGift(g){
+    const bob = Math.sin(g.bob) * 5;
+    const x = g.x, y = g.y + bob;
+    const w = 26, h = 22;
+
+    // 阴影
+    ctx.fillStyle = "rgba(0,0,0,.25)";
+    ctx.beginPath();
+    ctx.ellipse(x, y+16, 14, 5, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // 盒子
+    ctx.fillStyle = (g.kind==="gold") ? "rgba(255,211,107,.95)" : "rgba(255,59,107,.90)";
+    roundRect(x-w/2, y-h/2, w, h, 6);
+    ctx.fill();
+
+    // 绑带
+    ctx.fillStyle = "rgba(255,255,255,.92)";
+    ctx.fillRect(x-2, y-h/2, 4, h);
+    ctx.fillRect(x-w/2, y-2, w, 4);
+
+    // 蝴蝶结
+    ctx.fillStyle = "rgba(255,255,255,.95)";
+    ctx.beginPath();
+    ctx.ellipse(x-6, y-h/2-2, 7, 5, 0.2, 0, Math.PI*2);
+    ctx.ellipse(x+6, y-h/2-2, 7, 5, -0.2, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  function drawSnowball(s){
+    ctx.save();
+    ctx.fillStyle = "rgba(255,255,255,.92)";
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(0,0,0,.12)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(s.x-2, s.y-2, s.r*0.35, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawSparkle(sp){
+    ctx.save();
+    ctx.globalAlpha = sp.a;
+    ctx.globalCompositeOperation = "lighter";
+    ctx.fillStyle = "rgba(127,255,212,.9)";
+    ctx.beginPath();
+    ctx.arc(sp.x, sp.y, sp.r, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawPlayer(){
+    const blink = (player.invuln > 0) && (Math.floor(performance.now()/90) % 2 === 0);
+    if(blink) return;
+
+    const x = player.x, y = player.y;
+
+    // 阴影
+    ctx.fillStyle = "rgba(0,0,0,.28)";
+    ctx.beginPath();
+    ctx.ellipse(x, y+18, 18, 6, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // 身体（红）
+    ctx.fillStyle = "rgba(255,59,107,.95)";
+    roundRect(x-16, y-16, 32, 34, 12);
+    ctx.fill();
+
+    // 白边
+    ctx.fillStyle = "rgba(255,255,255,.92)";
+    roundRect(x-16, y-6, 32, 10, 10);
+    ctx.fill();
+
+    // 头
+    ctx.fillStyle = "rgba(255,240,220,.95)";
+    ctx.beginPath();
+    ctx.arc(x, y-22, 12, 0, Math.PI*2);
+    ctx.fill();
+
+    // 眼睛
+    ctx.fillStyle = "rgba(0,0,0,.45)";
+    ctx.beginPath();
+    ctx.arc(x-4, y-24, 1.6, 0, Math.PI*2);
+    ctx.arc(x+4, y-24, 1.6, 0, Math.PI*2);
+    ctx.fill();
+
+    // 帽子
+    ctx.fillStyle = "rgba(255,59,107,.95)";
+    ctx.beginPath();
+    ctx.moveTo(x-13, y-26);
+    ctx.quadraticCurveTo(x, y-46, x+13, y-26);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,.95)";
+    ctx.beginPath();
+    ctx.arc(x+12, y-34, 5, 0, Math.PI*2);
+    ctx.fill();
+
+    // 腰带
+    ctx.fillStyle = "rgba(0,0,0,.55)";
+    roundRect(x-13, y+3, 26, 7, 4);
+    ctx.fill();
+    ctx.fillStyle = "rgba(255,211,107,.95)";
+    ctx.strokeStyle = "rgba(0,0,0,.25)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x-4, y+4, 8, 5);
+  }
+
+  function roundRect(x,y,w,h,r){
+    const rr = Math.min(r, w/2, h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+rr, y);
+    ctx.arcTo(x+w, y, x+w, y+h, rr);
+    ctx.arcTo(x+w, y+h, x, y+h, rr);
+    ctx.arcTo(x, y+h, x, y, rr);
+    ctx.arcTo(x, y, x+w, y, rr);
+    ctx.closePath();
+  }
+
+  // ---- 结算/烟花 ----
+  let fwParticles = [];
+  function openModal(win){
+    paused = true;
+    modal.classList.add("show");
+
+    if(win){
+      titleText.textContent = `圣诞快乐，${GIRL_NAME}`;
+      msgText.innerHTML =
+        `Merry Christmas！<br><br>` +
+        `你把礼物都收齐啦：<b style="color:var(--gold)">这份小小的圣诞惊喜</b>送给你。<br>` +
+        `${BIRTHDAY_TEXT}<br><br>` +
+        `我会一直陪你长大。`;
+      makeFireworks();
+      beep(1040, 0.06, "triangle", 0.04);
+      setTimeout(()=>beep(1320, 0.07, "triangle", 0.03), 120);
+      setTimeout(()=>beep(1560, 0.08, "triangle", 0.03), 260);
+    } else {
+      titleText.textContent = `差一点点，${GIRL_NAME}`;
+      msgText.innerHTML =
+        `礼物还没收齐，不过没关系。<br><br>` +
+        `真正的礼物是：<b style="color:var(--mint)">你今天过圣诞</b>。<br>` +
+        `${BIRTHDAY_TEXT}<br><br>` +
+        `点“再玩一次”，我陪你把礼物收回来。`;
+      makeFireworks(true);
+      beep(220, 0.08, "sine", 0.04);
+    }
+
+    // 同步尺寸（对话框烟花画布宽度自适应）
+    syncFireworksCanvas();
+  }
+
+  function hideModal(){
+    modal.classList.remove("show");
+    paused = false;
+  }
+
+  function syncFireworksCanvas(){
+    // 让烟花画布在高 DPI 下更清晰
+    const rect = fwCanvas.getBoundingClientRect();
+    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    fwCanvas.width = Math.floor(rect.width * dpr);
+    fwCanvas.height = Math.floor(rect.height * dpr);
+    fw.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener("resize", () => {
+    if(modal.classList.contains("show")) syncFireworksCanvas();
+  });
+
+  function makeFireworks(softer=false){
+    fwParticles = [];
+    const bursts = softer ? 5 : 8;
+    for(let i=0;i<bursts;i++){
+      burst(rng(140, 820), rng(70, 220), softer);
+    }
+  }
+
+  function burst(x,y,softer=false){
+    const count = softer ? 80 : 120;
+    const palette = ["#ffd36b","#7fffd4","#ff3b6b","#6ea8ff","#ffffff"];
+    for(let i=0;i<count;i++){
+      const a = Math.random() * Math.PI*2;
+      const sp = rng(80, softer? 200 : 280);
+      fwParticles.push({
+        x, y,
+        vx: Math.cos(a)*sp,
+        vy: Math.sin(a)*sp,
+        life: rng(0.8, softer? 1.4 : 1.8),
+        age: 0,
+        c: palette[(Math.random()*palette.length)|0],
+        r: rng(1.2, 2.6),
+      });
+    }
+  }
+
+  function drawFireworks(dt){
+    if(!modal.classList.contains("show")) return;
+    fw.clearRect(0,0, fwCanvas.width, fwCanvas.height);
+
+    // 背景淡雾
+    fw.fillStyle = "rgba(0,0,0,.12)";
+    fw.fillRect(0,0, fwCanvas.width, fwCanvas.height);
+
+    // 粒子
+    fw.save();
+    fw.globalCompositeOperation = "lighter";
+    const g = 140;
+    for(const p of fwParticles){
+      p.age += dt;
+      const t = p.age / p.life;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt + g*dt*dt*30;
+      p.vx *= (1 - dt*0.9);
+      p.vy *= (1 - dt*0.9);
+
+      const alpha = Math.max(0, 1 - t);
+      fw.globalAlpha = alpha;
+      fw.fillStyle = p.c;
+      fw.beginPath();
+      fw.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      fw.fill();
+    }
+    fw.restore();
+
+    for(let i=fwParticles.length-1;i>=0;i--){
+      if(fwParticles[i].age >= fwParticles[i].life) fwParticles.splice(i,1);
+    }
+
+    // 自动补充烟花
+    if(fwParticles.length < 60){
+      burst(rng(160, fwCanvas.width-160), rng(60, fwCanvas.height-120), false);
+      if(audioOn) beep(rng(520, 980), 0.03, "triangle", 0.02);
+    }
+  }
+
+  // ---- 事件 ----
+  restartBtn.addEventListener("click", () => { paused=false; reset(); });
+  playAgainBtn.addEventListener("click", () => { paused=false; reset(); });
+
+  soundBtn.addEventListener("click", () => {
+    audioOn = !audioOn;
+    soundBtn.textContent = `音效：${audioOn ? "开" : "关"}`;
+    if(audioOn) beep(440, 0.05, "sine", 0.03);
+  });
+
+  copyBtn.addEventListener("click", async () => {
+    const text = `圣诞快乐，${GIRL_NAME}！\nMerry Christmas！\n\n${BIRTHDAY_TEXT}\n\n我会一直站在你这边。`;
+    try{
+      await navigator.clipboard.writeText(text);
+      beep(880, 0.05, "triangle", 0.03);
+      copyBtn.textContent = "已复制";
+      setTimeout(()=> copyBtn.textContent = "复制祝福", 1200);
+    } catch {
+      // 兼容降级
+      const ta = document.createElement("textarea");
+      ta.value = text; document.body.appendChild(ta);
+      ta.select(); document.execCommand("copy");
+      document.body.removeChild(ta);
+      copyBtn.textContent = "已复制";
+      setTimeout(()=> copyBtn.textContent = "复制祝福", 1200);
+    }
+  });
+
+  modal.addEventListener("click", (e) => {
+    if(e.target === modal){
+      // 点击遮罩不关闭，避免误触；想要可在此改为 hideModal()
+      beep(220, 0.04, "sine", 0.02);
+    }
+  });
+
+  // ---- 主循环 ----
+  reset();
+  let last = performance.now();
+  function loop(now){
+    const dt = Math.min(0.033, (now - last) / 1000);
+    last = now;
+
+    if(!state.gameOver && !state.win) step(dt);
+    draw();
+    drawFireworks(dt);
+
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
